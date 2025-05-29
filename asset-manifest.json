@@ -1,13 +1,13 @@
 {
   "files": {
-    "main.css": "/pookiemistakes/static/css/main.6124e0bd.css",
-    "main.js": "/pookiemistakes/static/js/main.c6c9e16d.js",
+    "main.css": "/pookiemistakes/static/css/main.39a5df37.css",
+    "main.js": "/pookiemistakes/static/js/main.f9e97a3e.js",
     "index.html": "/pookiemistakes/index.html",
-    "main.6124e0bd.css.map": "/pookiemistakes/static/css/main.6124e0bd.css.map",
-    "main.c6c9e16d.js.map": "/pookiemistakes/static/js/main.c6c9e16d.js.map"
+    "main.39a5df37.css.map": "/pookiemistakes/static/css/main.39a5df37.css.map",
+    "main.f9e97a3e.js.map": "/pookiemistakes/static/js/main.f9e97a3e.js.map"
   },
   "entrypoints": [
-    "static/css/main.6124e0bd.css",
-    "static/js/main.c6c9e16d.js"
+    "static/css/main.39a5df37.css",
+    "static/js/main.f9e97a3e.js"
   ]
 }
