@@ -66,24 +66,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // POST /api/complaints
     if (req.method === 'POST') {
-      const { text, isAdmin, adminPasskey } = req.body;
+      const { text, isInboxManager, inboxManagerPasskey } = req.body;
 
       // Validate input
       if (!text || typeof text !== 'string') {
         return res.status(400).json({ error: 'Invalid complaint text' });
       }
 
-      // If it's an admin complaint, verify the passkey
-      if (isAdmin) {
-        const correctPasskey = process.env.ADMIN_PASSKEY;
-        if (!correctPasskey || adminPasskey !== correctPasskey) {
-          return res.status(401).json({ error: 'Invalid admin passkey' });
+      // If it's an inbox manager complaint, verify the passkey
+      if (isInboxManager) {
+        if (inboxManagerPasskey !== 'ILY') {
+          return res.status(401).json({ error: 'Invalid inbox manager passkey' });
         }
       }
 
       const complaint = {
         text,
-        isAdmin,
+        isInboxManager,
         createdAt: new Date(),
       };
 
@@ -93,12 +92,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // DELETE /api/complaints
     if (req.method === 'DELETE') {
-      const { id, adminPasskey } = req.body;
+      const { id, inboxManagerPasskey } = req.body;
 
-      // Verify admin passkey
-      const correctPasskey = process.env.ADMIN_PASSKEY;
-      if (!correctPasskey || adminPasskey !== correctPasskey) {
-        return res.status(401).json({ error: 'Invalid admin passkey' });
+      // Verify inbox manager passkey
+      if (inboxManagerPasskey !== 'ILY') {
+        return res.status(401).json({ error: 'Invalid inbox manager passkey' });
       }
 
       if (!id) {

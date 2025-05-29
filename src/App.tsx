@@ -29,13 +29,13 @@ const confirmationMessages = [
 ];
 
 function App() {
-  const [activePage, setActivePage] = useState<'home' | 'past' | 'admin'>('home');
+  const [activePage, setActivePage] = useState<'home' | 'past' | 'inbox'>('home');
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [newComplaint, setNewComplaint] = useState('');
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [currentMessage, setCurrentMessage] = useState(confirmationMessages[0]);
-  const [adminPasskey, setAdminPasskey] = useState('');
-  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
+  const [inboxManagerPasskey, setInboxManagerPasskey] = useState('');
+  const [isInboxManagerAuthenticated, setIsInboxManagerAuthenticated] = useState(false);
   const [showPasskeyError, setShowPasskeyError] = useState(false);
   const [showRetractConfirmation, setShowRetractConfirmation] = useState<string | null>(null);
 
@@ -80,10 +80,10 @@ function App() {
     });
   };
 
-  const handleAdminLogin = (e: React.FormEvent) => {
+  const handleInboxManagerLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (adminPasskey === getAdminPasskey()) {
-      setIsAdminAuthenticated(true);
+    if (inboxManagerPasskey === 'ILY') {
+      setIsInboxManagerAuthenticated(true);
       setShowPasskeyError(false);
     } else {
       setShowPasskeyError(true);
@@ -94,7 +94,8 @@ function App() {
     try {
       await axios.put('/api/complaints', {
         id: complaintId,
-        acknowledged: true
+        acknowledged: true,
+        inboxManagerPasskey: 'ILY'
       });
       setComplaints(prevComplaints => 
         prevComplaints.map(complaint => 
@@ -115,7 +116,10 @@ function App() {
   const confirmRetractComplaint = async (complaintId: string) => {
     try {
       await axios.delete('/api/complaints', {
-        data: { id: complaintId }
+        data: { 
+          id: complaintId,
+          inboxManagerPasskey: 'ILY'
+        }
       });
       setComplaints(prevComplaints => prevComplaints.filter(complaint => complaint._id !== complaintId));
       setShowRetractConfirmation(null);
@@ -124,21 +128,15 @@ function App() {
     }
   };
 
-  const handlePageChange = (page: 'home' | 'past' | 'admin') => {
+  const handlePageChange = (page: 'home' | 'past' | 'inbox') => {
     setActivePage(page);
-    if (page !== 'admin') {
-      setIsAdminAuthenticated(false);
-      setAdminPasskey('');
+    if (page !== 'inbox') {
+      setIsInboxManagerAuthenticated(false);
+      setInboxManagerPasskey('');
       setShowPasskeyError(false);
     }
     // Reset confirmation state when switching pages
     setShowConfirmation(false);
-  };
-
-  // Store passkey in a way that's not directly visible in the code
-  const getAdminPasskey = () => {
-    const chars = ['I', 'L', 'Y'];
-    return chars.join('');
   };
 
   return (
@@ -162,10 +160,10 @@ function App() {
             Past Complaints
           </button>
           <button
-            className={`menu-button admin-button ${activePage === 'admin' ? 'active' : ''}`}
-            onClick={() => handlePageChange('admin')}
+            className={`menu-button inbox-button ${activePage === 'inbox' ? 'active' : ''}`}
+            onClick={() => handlePageChange('inbox')}
           >
-            Settings ⚙️
+            Inbox Manager ⚙️
           </button>
         </div>
       </div>
@@ -261,9 +259,9 @@ function App() {
             )}
           </div>
         ) : (
-          <div className="admin-container">
-            {!isAdminAuthenticated ? (
-              <div className="admin-login">
+          <div className="inbox-container">
+            {!isInboxManagerAuthenticated ? (
+              <div className="inbox-login">
                 {showPasskeyError ? (
                   <div className="passkey-error">
                     <h2>Oops! 🤔</h2>
@@ -272,19 +270,19 @@ function App() {
                       className="tertiary-button"
                       onClick={() => {
                         setShowPasskeyError(false);
-                        setAdminPasskey('');
+                        setInboxManagerPasskey('');
                       }}
                     >
                       Try Again
                     </button>
                   </div>
                 ) : (
-                  <form onSubmit={handleAdminLogin} className="passkey-form">
+                  <form onSubmit={handleInboxManagerLogin} className="passkey-form">
                     <h2>Enter Passkey</h2>
                     <input
                       type="password"
-                      value={adminPasskey}
-                      onChange={(e) => setAdminPasskey(e.target.value)}
+                      value={inboxManagerPasskey}
+                      onChange={(e) => setInboxManagerPasskey(e.target.value)}
                       placeholder="Enter your secret passkey..."
                       required
                     />
@@ -295,11 +293,11 @@ function App() {
                 )}
               </div>
             ) : (
-              <div className="admin-dashboard">
-                <h2>Admin Dashboard</h2>
-                <div className="admin-complaints-list">
+              <div className="inbox-dashboard">
+                <h2>Inbox Manager Dashboard</h2>
+                <div className="inbox-complaints-list">
                   {complaints.map((complaint) => (
-                    <div key={complaint._id} className="admin-complaint-item">
+                    <div key={complaint._id} className="inbox-complaint-item">
                       <div className="complaint-content">
                         <div className="complaint-text">{complaint.text}</div>
                         <div className="complaint-date">{formatDate(complaint.timestamp)}</div>
