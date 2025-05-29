@@ -22,9 +22,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    // Check if MongoDB URI is set
-    if (!process.env.MONGODB_URI) {
-      throw new Error('MONGODB_URI is not set in environment variables');
+    // Check for required environment variables
+    const requiredEnvVars = [
+      'MONGODB_USER',
+      'MONGODB_PASSWORD',
+      'MONGODB_CLUSTER',
+      'MONGODB_DATABASE'
+    ];
+
+    const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
+    if (missingVars.length > 0) {
+      throw new Error(`Missing environment variables: ${missingVars.join(', ')}`);
     }
 
     const { db } = await connectToDatabase();
@@ -38,7 +46,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       database: 'connected',
       timestamp: new Date().toISOString(),
       environment: process.env.NODE_ENV,
-      mongodbUri: process.env.MONGODB_URI ? 'Set' : 'Not Set'
+      databaseName: process.env.MONGODB_DATABASE,
+      cluster: process.env.MONGODB_CLUSTER,
+      // Don't expose sensitive information
+      user: process.env.MONGODB_USER ? 'Set' : 'Not Set',
+      password: process.env.MONGODB_PASSWORD ? 'Set' : 'Not Set'
     });
   } catch (error) {
     console.error('Test endpoint error:', error);
@@ -48,7 +60,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       error: error instanceof Error ? error.message : 'Unknown error',
       stack: process.env.NODE_ENV === 'development' ? error instanceof Error ? error.stack : undefined : undefined,
       environment: process.env.NODE_ENV,
-      mongodbUri: process.env.MONGODB_URI ? 'Set' : 'Not Set'
+      // Don't expose sensitive information
+      user: process.env.MONGODB_USER ? 'Set' : 'Not Set',
+      password: process.env.MONGODB_PASSWORD ? 'Set' : 'Not Set',
+      cluster: process.env.MONGODB_CLUSTER,
+      database: process.env.MONGODB_DATABASE
     });
   }
 } 

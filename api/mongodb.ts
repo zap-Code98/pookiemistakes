@@ -4,11 +4,23 @@ declare global {
   var _mongoClientPromise: Promise<MongoClient> | undefined;
 }
 
-if (!process.env.MONGODB_URI) {
-  throw new Error('Please add your MongoDB URI to .env.local');
+// Check for required environment variables
+const requiredEnvVars = [
+  'MONGODB_USER',
+  'MONGODB_PASSWORD',
+  'MONGODB_CLUSTER',
+  'MONGODB_DATABASE'
+];
+
+for (const envVar of requiredEnvVars) {
+  if (!process.env[envVar]) {
+    throw new Error(`Missing required environment variable: ${envVar}`);
+  }
 }
 
-const uri = process.env.MONGODB_URI;
+// Construct MongoDB URI from environment variables
+const uri = `mongodb+srv://${process.env.MONGODB_USER}:${process.env.MONGODB_PASSWORD}@${process.env.MONGODB_CLUSTER}/${process.env.MONGODB_DATABASE}?retryWrites=true&w=majority`;
+
 const options = {
   maxPoolSize: 10,
   minPoolSize: 5,
@@ -38,7 +50,7 @@ if (process.env.NODE_ENV === 'development') {
 export async function connectToDatabase(): Promise<{ client: MongoClient; db: Db }> {
   try {
     const client = await clientPromise;
-    const db = client.db('pookie_mistakes');
+    const db = client.db(process.env.MONGODB_DATABASE);
     
     // Test the connection
     await db.command({ ping: 1 });
