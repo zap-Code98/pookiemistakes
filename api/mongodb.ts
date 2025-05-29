@@ -1,4 +1,4 @@
-import { MongoClient, Db, MongoClientOptions } from 'mongodb';
+import { MongoClient, Db } from 'mongodb';
 
 declare global {
   var _mongoClientPromise: Promise<MongoClient> | undefined;
@@ -14,7 +14,9 @@ const options = {
   minPoolSize: 5,
   maxIdleTimeMS: 60000,
   connectTimeoutMS: 10000,
-} as MongoClientOptions;
+  serverSelectionTimeoutMS: 5000,
+  socketTimeoutMS: 45000,
+};
 
 let client: MongoClient;
 let clientPromise: Promise<MongoClient>;
@@ -34,9 +36,18 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 export async function connectToDatabase(): Promise<{ client: MongoClient; db: Db }> {
-  const client = await clientPromise;
-  const db = client.db('pookie_mistakes');
-  return { client, db };
+  try {
+    const client = await clientPromise;
+    const db = client.db('pookie_mistakes');
+    
+    // Test the connection
+    await db.command({ ping: 1 });
+    
+    return { client, db };
+  } catch (error) {
+    console.error('MongoDB connection error:', error);
+    throw new Error('Failed to connect to MongoDB');
+  }
 }
 
 // Export a module-scoped MongoClient promise. By doing this in a
