@@ -1,34 +1,48 @@
 # Pookie Mistakes
 
-A sweet and playful website for logging complaints with an Apple-inspired design.
+A sweet way to log and track complaints with love and care. Built with React, TypeScript, and MongoDB.
 
-## Setup
+## Features
 
-1. Make sure you have Node.js installed on your system
+- 💝 Beautiful and responsive UI
+- 📝 Submit and track complaints
+- 🔒 Admin dashboard for acknowledging complaints
+- 💾 Persistent storage with MongoDB
+- 🌐 Always available online
+- 📱 Mobile-friendly design
+
+## Tech Stack
+
+- React
+- TypeScript
+- MongoDB Atlas
+- Vercel (Hosting)
+- Axios (API calls)
+
+## Development
+
+1. Clone the repository
 2. Install dependencies:
    ```bash
    npm install
    ```
-3. Start the development server:
+3. Create a `.env.local` file with your MongoDB connection string:
+   ```
+   MONGODB_URI=your_mongodb_connection_string
+   ```
+4. Start the development server:
    ```bash
    npm start
    ```
 
-The application will open in your default browser at http://localhost:3000
+## Deployment
 
-## Features
+The application is automatically deployed to Vercel when changes are pushed to the main branch.
 
-- Apple-style design with a clean, modern interface
-- Home page with an envelope-style complaint submission form
-- Past Complaints page showing complaint history
-- Status tracking for each complaint
-- Beautiful pop art background pattern
-- Responsive design that works on all devices
+## Environment Variables
 
-## Future Enhancements
+- `MONGODB_URI`: Your MongoDB Atlas connection string
 
-- Database integration for persistent storage
-- User authentication
-- Real-time updates for complaint status
-- Email notifications
-- Custom themes and personalization options 
+## License
+
+MIT 

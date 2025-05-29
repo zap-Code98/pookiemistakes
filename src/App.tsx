@@ -1,19 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import './styles/App.css';
 
 interface Complaint {
-  id: number;
+  _id: string;
   text: string;
   acknowledged: boolean;
+  timestamp: string;
 }
-
-const dummyComplaints: Complaint[] = [
-  { id: 1, text: "You forgot to take out the trash again! 🗑️", acknowledged: true },
-  { id: 2, text: "You're always on your phone during dinner 📱", acknowledged: false },
-  { id: 3, text: "You didn't make the bed this morning 🛏️", acknowledged: true },
-  { id: 4, text: "You ate the last cookie without asking! 🍪", acknowledged: false },
-  { id: 5, text: "You left your socks on the floor again 🧦", acknowledged: true }
-];
 
 const LogoIcon = () => (
   <svg className="logo-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -35,20 +29,116 @@ const confirmationMessages = [
 ];
 
 function App() {
-  const [activePage, setActivePage] = useState<'home' | 'past'>('home');
-  const [complaints] = useState<Complaint[]>(dummyComplaints);
+  const [activePage, setActivePage] = useState<'home' | 'past' | 'admin'>('home');
+  const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [newComplaint, setNewComplaint] = useState('');
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [currentMessage, setCurrentMessage] = useState(confirmationMessages[0]);
+  const [adminPasskey, setAdminPasskey] = useState('');
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
+  const [showPasskeyError, setShowPasskeyError] = useState(false);
+  const [showRetractConfirmation, setShowRetractConfirmation] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Fetch complaints from API
+  useEffect(() => {
+    const fetchComplaints = async () => {
+      try {
+        const response = await axios.get('/api/complaints');
+        setComplaints(response.data);
+      } catch (error) {
+        console.error('Error fetching complaints:', error);
+      }
+    };
+    fetchComplaints();
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newComplaint.trim()) {
-      setNewComplaint('');
-      const randomMessage = confirmationMessages[Math.floor(Math.random() * confirmationMessages.length)];
-      setCurrentMessage(randomMessage);
-      setShowConfirmation(true);
+      try {
+        const response = await axios.post('/api/complaints', {
+          text: newComplaint.trim()
+        });
+        setComplaints(prev => [response.data, ...prev]);
+        setNewComplaint('');
+        const randomMessage = confirmationMessages[Math.floor(Math.random() * confirmationMessages.length)];
+        setCurrentMessage(randomMessage);
+        setShowConfirmation(true);
+      } catch (error) {
+        console.error('Error submitting complaint:', error);
+      }
     }
+  };
+
+  const formatDate = (timestamp: string) => {
+    return new Date(timestamp).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const handleAdminLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (adminPasskey === getAdminPasskey()) {
+      setIsAdminAuthenticated(true);
+      setShowPasskeyError(false);
+    } else {
+      setShowPasskeyError(true);
+    }
+  };
+
+  const handleAcknowledgeComplaint = async (complaintId: string) => {
+    try {
+      await axios.put('/api/complaints', {
+        id: complaintId,
+        acknowledged: true
+      });
+      setComplaints(prevComplaints => 
+        prevComplaints.map(complaint => 
+          complaint._id === complaintId 
+            ? { ...complaint, acknowledged: true }
+            : complaint
+        )
+      );
+    } catch (error) {
+      console.error('Error acknowledging complaint:', error);
+    }
+  };
+
+  const handleRetractComplaint = (complaintId: string) => {
+    setShowRetractConfirmation(complaintId);
+  };
+
+  const confirmRetractComplaint = async (complaintId: string) => {
+    try {
+      await axios.delete('/api/complaints', {
+        data: { id: complaintId }
+      });
+      setComplaints(prevComplaints => prevComplaints.filter(complaint => complaint._id !== complaintId));
+      setShowRetractConfirmation(null);
+    } catch (error) {
+      console.error('Error retracting complaint:', error);
+    }
+  };
+
+  const handlePageChange = (page: 'home' | 'past' | 'admin') => {
+    setActivePage(page);
+    if (page !== 'admin') {
+      setIsAdminAuthenticated(false);
+      setAdminPasskey('');
+      setShowPasskeyError(false);
+    }
+    // Reset confirmation state when switching pages
+    setShowConfirmation(false);
+  };
+
+  // Store passkey in a way that's not directly visible in the code
+  const getAdminPasskey = () => {
+    const chars = ['I', 'L', 'Y'];
+    return chars.join('');
   };
 
   return (
@@ -61,15 +151,21 @@ function App() {
         <div className="menu-buttons">
           <button
             className={`menu-button ${activePage === 'home' ? 'active' : ''}`}
-            onClick={() => setActivePage('home')}
+            onClick={() => handlePageChange('home')}
           >
             Home
           </button>
           <button
             className={`menu-button ${activePage === 'past' ? 'active' : ''}`}
-            onClick={() => setActivePage('past')}
+            onClick={() => handlePageChange('past')}
           >
             Past Complaints
+          </button>
+          <button
+            className={`menu-button admin-button ${activePage === 'admin' ? 'active' : ''}`}
+            onClick={() => handlePageChange('admin')}
+          >
+            Settings ⚙️
           </button>
         </div>
       </div>
@@ -101,16 +197,125 @@ function App() {
               </div>
             )}
           </div>
+        ) : activePage === 'past' ? (
+          <div className="complaints-container">
+            {complaints.length === 0 ? (
+              <div className="no-complaints-message">
+                <h2>You're such a good boyfie! 💖</h2>
+                <p>No complaints yet - you're doing everything perfectly! Keep being amazing! 🌟</p>
+                <div className="cute-emoji">✨💝✨</div>
+              </div>
+            ) : (
+              <>
+                <div className="past-complaints-header">
+                  <h2>Always Listening, Always Growing 💝</h2>
+                  <p>Every complaint helps me become a better version of myself for you ✨</p>
+                </div>
+                <div className="complaints-list">
+                  {complaints.map((complaint) => (
+                    <div key={complaint._id} className="complaint-item">
+                      <div className="complaint-content">
+                        <div className="complaint-text">{complaint.text}</div>
+                        <div className="complaint-date">{formatDate(complaint.timestamp)}</div>
+                      </div>
+                      <div className="complaint-actions">
+                        <div className={`status-badge ${complaint.acknowledged ? 'acknowledged' : ''}`}>
+                          {complaint.acknowledged ? 'Acknowledged' : 'Pending'}
+                        </div>
+                        <button 
+                          className="retract-button"
+                          onClick={() => handleRetractComplaint(complaint._id)}
+                          title="Retract Complaint"
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill="currentColor"/>
+                          </svg>
+                        </button>
+                      </div>
+                      {showRetractConfirmation === complaint._id && (
+                        <div className="retract-confirmation">
+                          <div className="retract-confirmation-content">
+                            <h3>Wait, my love! 💝</h3>
+                            <p>Are you sure you want to take back this complaint? I promise I'll do better next time! 🥺</p>
+                            <div className="retract-confirmation-buttons">
+                              <button 
+                                className="tertiary-button"
+                                onClick={() => setShowRetractConfirmation(null)}
+                              >
+                                Keep It
+                              </button>
+                              <button 
+                                className="submit-button"
+                                onClick={() => confirmRetractComplaint(complaint._id)}
+                              >
+                                Yes, Remove It
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
         ) : (
-          <div className="complaints-list">
-            {complaints.map((complaint) => (
-              <div key={complaint.id} className="complaint-item">
-                <div className="complaint-text">{complaint.text}</div>
-                <div className={`status-badge ${complaint.acknowledged ? 'acknowledged' : ''}`}>
-                  {complaint.acknowledged ? 'Acknowledged' : 'Pending'}
+          <div className="admin-container">
+            {!isAdminAuthenticated ? (
+              <div className="admin-login">
+                {showPasskeyError ? (
+                  <div className="passkey-error">
+                    <h2>Oops! 🤔</h2>
+                    <p>Are you sure you belong here? This is a special place for special people!</p>
+                    <button 
+                      className="tertiary-button"
+                      onClick={() => {
+                        setShowPasskeyError(false);
+                        setAdminPasskey('');
+                      }}
+                    >
+                      Try Again
+                    </button>
+                  </div>
+                ) : (
+                  <form onSubmit={handleAdminLogin} className="passkey-form">
+                    <h2>Enter Passkey</h2>
+                    <input
+                      type="password"
+                      value={adminPasskey}
+                      onChange={(e) => setAdminPasskey(e.target.value)}
+                      placeholder="Enter your secret passkey..."
+                      required
+                    />
+                    <button type="submit" className="submit-button">
+                      Enter
+                    </button>
+                  </form>
+                )}
+              </div>
+            ) : (
+              <div className="admin-dashboard">
+                <h2>Admin Dashboard</h2>
+                <div className="admin-complaints-list">
+                  {complaints.map((complaint) => (
+                    <div key={complaint._id} className="admin-complaint-item">
+                      <div className="complaint-content">
+                        <div className="complaint-text">{complaint.text}</div>
+                        <div className="complaint-date">{formatDate(complaint.timestamp)}</div>
+                      </div>
+                      <button
+                        className={`acknowledge-button ${complaint.acknowledged ? 'acknowledged' : ''}`}
+                        onClick={() => handleAcknowledgeComplaint(complaint._id)}
+                        disabled={complaint.acknowledged}
+                      >
+                        {complaint.acknowledged ? 'Acknowledged ✓' : 'Acknowledge'}
+                      </button>
+                    </div>
+                  ))}
                 </div>
               </div>
-            ))}
+            )}
           </div>
         )}
       </div>
