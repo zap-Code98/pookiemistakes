@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "npm run build",
+  "buildCommand": "SKIP_PREFLIGHT_CHECK=true npm run build",
   "outputDirectory": "build",
   "installCommand": "npm install --legacy-peer-deps --force",
   "builds": [
@@ -9,7 +9,7 @@
       "use": "@vercel/static-build",
       "config": {
         "distDir": "build",
-        "buildCommand": "SKIP_PREFLIGHT_CHECK=true npm run build"
+        "buildCommand": "SKIP_PREFLIGHT_CHECK=true GENERATE_SOURCEMAP=false npm run build"
       }
     },
     {
