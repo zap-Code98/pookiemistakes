@@ -1,24 +1,39 @@
-import { NextApiRequest, NextApiResponse } from 'next';
-import clientPromise from './mongodb';
+import { VercelRequest, VercelResponse } from '@vercel/node';
+import { connectToDatabase } from './mongodb';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // Enable CORS
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+  );
+
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
   try {
-    const client = await clientPromise;
-    const db = client.db("pookie_mistakes");
-    
-    // Test database connection
-    await db.command({ ping: 1 });
-    
-    res.status(200).json({ 
+    const { db } = await connectToDatabase();
+    return res.status(200).json({
       status: 'ok',
-      message: 'Database connection successful',
+      message: 'API is working',
+      database: 'connected',
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    console.error('Database connection test failed:', error);
-    res.status(500).json({ 
+    console.error('Test endpoint error:', error);
+    return res.status(500).json({
       status: 'error',
-      message: 'Database connection failed',
+      message: 'Failed to connect to database',
       error: error instanceof Error ? error.message : 'Unknown error'
     });
   }
