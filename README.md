@@ -31,9 +31,19 @@ A sweet way to log and track complaints with love and care. Built with React, Ty
    MONGODB_URI=your_mongodb_connection_string
    ```
 4. Start the development server:
+   
+   **For frontend-only development (no API):**
    ```bash
    npm run dev
    ```
+   
+   **For full development with API support (requires Vercel CLI):**
+   ```bash
+   npm install -g vercel
+   npm run dev:vercel
+   ```
+   
+   Note: The API routes (serverless functions) only work when using `vercel dev` or when deployed to Vercel. For local API testing, use `npm run dev:vercel`.
 
 ## Deployment
 

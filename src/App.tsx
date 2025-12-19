@@ -38,6 +38,7 @@ function App() {
   const [isInboxManagerAuthenticated, setIsInboxManagerAuthenticated] = useState(false);
   const [showPasskeyError, setShowPasskeyError] = useState(false);
   const [showRetractConfirmation, setShowRetractConfirmation] = useState<string | null>(null);
+  const [isSubmiting, setIsSubmitting] = useState(false);
 
   // Fetch complaints from API
   useEffect(() => {
@@ -52,9 +53,11 @@ function App() {
     fetchComplaints();
   }, []);
 
+
+  // Submits the new complaint to the API
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newComplaint.trim()) {
+    if (newComplaint.trim()) setIsSubmitting(true); {
       try {
         const response = await axios.post('/api/complaints', {
           text: newComplaint.trim()
@@ -70,21 +73,30 @@ function App() {
     }
   };
 
-  const formatDate = (timestamp: string) => {
-    return new Date(timestamp).toLocaleDateString('en-US', {
+  const formatDate = (timestamp: string) => 
+    new Date(timestamp).toLocaleDateString('en-US', 
+      {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
-    });
-  };
+    }
+      );
+  
 
-  const handleInboxManagerLogin = (e: React.FormEvent) => {
+  const handleInboxManagerLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (inboxManagerPasskey === 'ILY') {
       setIsInboxManagerAuthenticated(true);
       setShowPasskeyError(false);
+      // Refetch complaints from database when inbox manager logs in
+      try {
+        const response = await axios.get('/api/complaints');
+        setComplaints(response.data);
+      } catch (error) {
+        console.error('Error fetching complaints:', error);
+      }
     } else {
       setShowPasskeyError(true);
     }
@@ -92,8 +104,7 @@ function App() {
 
   const handleAcknowledgeComplaint = async (complaintId: string) => {
     try {
-      await axios.put('/api/complaints', {
-        id: complaintId,
+      await axios.put(`/api/complaints?id=${complaintId}`, {
         acknowledged: true,
         inboxManagerPasskey: 'ILY'
       });
@@ -115,12 +126,7 @@ function App() {
 
   const confirmRetractComplaint = async (complaintId: string) => {
     try {
-      await axios.delete('/api/complaints', {
-        data: { 
-          id: complaintId,
-          inboxManagerPasskey: 'ILY'
-        }
-      });
+      await axios.delete(`/api/complaints?id=${complaintId}`);
       setComplaints(prevComplaints => prevComplaints.filter(complaint => complaint._id !== complaintId));
       setShowRetractConfirmation(null);
     } catch (error) {
