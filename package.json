@@ -1,6 +1,7 @@
 {
   "name": "pookie-mistakes",
   "version": "0.1.0",
+  "type" : "module",
   "private": true,
   "dependencies": {
     "@types/react": "19.1.8",

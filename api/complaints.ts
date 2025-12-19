@@ -1,5 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { connectToDatabase } from './mongodb';
+import { connectToDatabase } from './mongodb.js';
 import { ObjectId } from 'mongodb';
 
 
